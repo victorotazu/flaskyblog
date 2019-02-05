@@ -3,7 +3,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from . import auth
 from .. import db
 from ..models import User
-from .forms import LoginForm, RegistrationForm
+from .forms import LoginForm, RegistrationForm, UpdateUserInfoForm
 from ..email import send_email
 
 @auth.route('/login', methods=['GET', 'POST'])
@@ -80,3 +80,15 @@ def resend_confirmation():
                'auth/email/confirm', user=current_user, token=token)
     flash('A new confirmation email has been sent to you by email.')
     return redirect(url_for('main.index'))
+
+@auth.route('/update', methods=['GET', 'POST'])
+@login_required
+def update_info():
+    form = UpdateUserInfoForm()
+    if form.validate_on_submit():
+        current_user.username = form.username.data
+        current_user.password = form.new_password.data
+        db.session.commit()
+        flash('Your new information has been saved successfully!')
+        return redirect(url_for('main.index'))
+    return render_template('auth/update.html', form=form)

@@ -54,6 +54,7 @@ class User(UserMixin, db.Model):
         db.session.add(self)
         return True
 
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
