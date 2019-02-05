@@ -44,5 +44,18 @@ class UpdateUserInfoForm(FlaskForm):
         if field.data != current_user.username:
             if User.query.filter_by(username=field.data).first():
                 raise ValidationError('Username already in use')
-                
+
+class ForgotPasswordForm(FlaskForm):
+    email = StringField('Email', validators=[DataRequired(), Length(1, 64), Email()])
+    send = SubmitField('Send')
+    
+    def validate_email(self, field):
+        if not User.query.filter_by(email=field.data).first():
+            raise ValidationError('Email not registered in our database.')
+
+class ResetPasswordForm(FlaskForm):
+    new_password = PasswordField('New Password', validators=[
+        DataRequired(), EqualTo('password2', 'Passwords must match.')])
+    password2 = PasswordField('Confirm password', validators=[DataRequired()])
+    submit = SubmitField('Reset')
 

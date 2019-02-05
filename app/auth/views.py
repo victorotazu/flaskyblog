@@ -3,7 +3,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from . import auth
 from .. import db
 from ..models import User
-from .forms import LoginForm, RegistrationForm, UpdateUserInfoForm
+from .forms import LoginForm, RegistrationForm, UpdateUserInfoForm, ForgotPasswordForm, ResetPasswordForm
 from ..email import send_email
 
 @auth.route('/login', methods=['GET', 'POST'])
@@ -92,3 +92,29 @@ def update_info():
         flash('Your new information has been saved successfully!')
         return redirect(url_for('main.index'))
     return render_template('auth/update.html', form=form)
+
+@auth.route('/forgot', methods=['GET', 'POST'])
+def forgot_password():
+    form = ForgotPasswordForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        token = user.generate_confirmation_token()
+        send_email(user.email, 'Reset your password',
+        'auth/email/forgot', user=user, token=token)
+        flash('An email has been sent to you to reset your password!')
+    return render_template('auth/forgot.html', form=form)
+
+@auth.route('/reset/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    if not current_user.is_anonymous:
+        return redirect(url_for('main.index'))
+    form = ResetPasswordForm() 
+    if form.validate_on_submit():
+        if User.reset_password(token, form.new_password.data):
+            db.session.commit()
+            flash('Your password was reset successfully!')
+            return redirect(url_for('auth.login'))
+        else:
+            return redirect(url_for('main.index'))
+            
+    return render_template('auth/reset_password.html', form=form)
